@@ -1,0 +1,50 @@
+{
+	"info": {
+		"_postman_id": "29eaf8da-d7f7-4eef-bb16-3d46acaa11b3",
+		"name": "RSSAggregator",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "101162"
+	},
+	"item": [
+		{
+			"name": "Readiness",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/v1/readiness",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"readiness"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Err",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/v1/err",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"err"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
