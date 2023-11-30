@@ -1,10 +1,19 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
+	"database/sql"
 	"log"
 	"os"
+
+	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
+
+type apiConfig struct {
+	DB *database.Queries
+}
 
 func main() {
 	// Load .env file variables.
@@ -17,8 +26,20 @@ func main() {
 		port = "8080"
 	}
 
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("DB_URL env variable not set")
+	}
+
+	// Connect to the database.
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal("cannot connect to the db:", err)
+	}
+	dbQueries := database.New(db)
+
 	// Create a new router.
-	r := NewRouter()
+	r := NewRouter(dbQueries)
 
 	// start the server.
 	if err := NewServer("localhost:"+port, r).Start(); err != nil {
