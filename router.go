@@ -1,12 +1,14 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
-	"net/http"
+	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 )
 
-func NewRouter() http.Handler {
+func NewRouter(db database.Querier) http.Handler {
 	r := chi.NewRouter()
 
 	// Basic CORS
@@ -25,12 +27,15 @@ func NewRouter() http.Handler {
 	// Adds a v1 subrouter.
 	v1 := chi.NewRouter()
 	r.Mount("/v1", v1)
-	addV1Routes(v1)
+	addV1Routes(v1, db)
 
 	return r
 }
 
-func addV1Routes(r chi.Router) {
+func addV1Routes(r chi.Router, db database.Querier) {
 	r.Get("/readiness", readinessHandler)
 	r.Get("/err", errorHandler)
+
+	userHandler := NewUserHandler(db)
+	r.Post("/users", userHandler.CreateUser)
 }
