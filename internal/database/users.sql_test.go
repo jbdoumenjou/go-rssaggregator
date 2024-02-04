@@ -21,7 +21,7 @@ func CreateRandomUser(t *testing.T) User {
 	require.Equal(t, name, user.Name)
 	require.NotEmpty(t, user.CreatedAt)
 	require.NotEmpty(t, user.UpdatedAt)
-	require.NotEmpty(t, user.Apikey)
+	require.NotEmpty(t, user.ApiKey)
 
 	return user
 }
@@ -35,13 +35,13 @@ func TestQueries_CreateUser(t *testing.T) {
 func TestQueries_GetUserFromApiKey(t *testing.T) {
 	user := CreateRandomUser(t)
 
-	user2, err := testQueries.GetUserFromApiKey(context.Background(), user.Apikey)
+	user2, err := testQueries.GetUserFromApiKey(context.Background(), user.ApiKey)
 	require.NoError(t, err)
 	assert.Equal(t, user, user2)
 
 	testQueries.db.QueryContext(context.Background(), "Delete from users where id = $1", user.ID)
 
-	user3, err := testQueries.GetUserFromApiKey(context.Background(), user.Apikey)
+	user3, err := testQueries.GetUserFromApiKey(context.Background(), user.ApiKey)
 	require.Error(t, err)
 	assert.Empty(t, user3)
 }
