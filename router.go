@@ -38,4 +38,5 @@ func addV1Routes(r chi.Router, db database.Querier) {
 
 	userHandler := NewUserHandler(db)
 	r.Post("/users", userHandler.CreateUser)
+	r.Get("/users", userHandler.GetUser)
 }

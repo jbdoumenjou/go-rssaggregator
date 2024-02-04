@@ -40,7 +40,7 @@ func (m *MockQuerier) EXPECT() *MockQuerierMockRecorder {
 }
 
 // CreateUser mocks base method.
-func (m *MockQuerier) CreateUser(arg0 context.Context, arg1 database.CreateUserParams) (database.User, error) {
+func (m *MockQuerier) CreateUser(arg0 context.Context, arg1 string) (database.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", arg0, arg1)
 	ret0, _ := ret[0].(database.User)
@@ -52,4 +52,19 @@ func (m *MockQuerier) CreateUser(arg0 context.Context, arg1 database.CreateUserP
 func (mr *MockQuerierMockRecorder) CreateUser(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockQuerier)(nil).CreateUser), arg0, arg1)
+}
+
+// GetUserFromApiKey mocks base method.
+func (m *MockQuerier) GetUserFromApiKey(arg0 context.Context, arg1 string) (database.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserFromApiKey", arg0, arg1)
+	ret0, _ := ret[0].(database.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserFromApiKey indicates an expected call of GetUserFromApiKey.
+func (mr *MockQuerierMockRecorder) GetUserFromApiKey(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserFromApiKey", reflect.TypeOf((*MockQuerier)(nil).GetUserFromApiKey), arg0, arg1)
 }

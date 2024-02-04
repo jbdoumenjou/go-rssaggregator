@@ -3,31 +3,45 @@ package database
 import (
 	"context"
 	"testing"
-	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/google/uuid"
 )
 
-func TestQueries_CreateUser(t *testing.T) {
-	now := time.Now().UTC().Round(time.Microsecond)
-	uuid, err := uuid.NewUUID()
-	require.NoError(t, err)
+func CreateRandomUser(t *testing.T) User {
+	t.Helper()
 
-	params := CreateUserParams{
-		ID:        uuid,
-		CreatedAt: now,
-		UpdatedAt: now,
-		Name:      RandomString(12),
-	}
-
-	user, err := testQueries.CreateUser(context.Background(), params)
+	name := RandomString(12)
+	user, err := testQueries.CreateUser(context.Background(), name)
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
 
-	require.Equal(t, params.ID, user.ID)
-	require.Equal(t, params.Name, user.Name)
-	require.Equal(t, params.CreatedAt, user.CreatedAt)
-	require.Equal(t, params.UpdatedAt, user.UpdatedAt)
+	require.NotEmpty(t, user.ID)
+	require.Equal(t, name, user.Name)
+	require.NotEmpty(t, user.CreatedAt)
+	require.NotEmpty(t, user.UpdatedAt)
+	require.NotEmpty(t, user.ApiKey)
+
+	return user
+}
+
+func TestQueries_CreateUser(t *testing.T) {
+	user := CreateRandomUser(t)
+
+	testQueries.db.QueryContext(context.Background(), "Delete from users where id = $1", user.ID)
+}
+
+func TestQueries_GetUserFromApiKey(t *testing.T) {
+	user := CreateRandomUser(t)
+
+	user2, err := testQueries.GetUserFromApiKey(context.Background(), user.ApiKey)
+	require.NoError(t, err)
+	assert.Equal(t, user, user2)
+
+	testQueries.db.QueryContext(context.Background(), "Delete from users where id = $1", user.ID)
+
+	user3, err := testQueries.GetUserFromApiKey(context.Background(), user.ApiKey)
+	require.Error(t, err)
+	assert.Empty(t, user3)
 }
