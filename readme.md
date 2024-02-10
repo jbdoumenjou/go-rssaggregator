@@ -70,3 +70,15 @@ I configure sqlc to generate a querier interface to easily mock the database in 
 I use mock to generate the [mock](https://github.com/uber-go/mock) of the querier interface.
 It is an exercise to use the mock package and to understand how it works.
 We could launch a db in a container for the tests and avoid to mock the database.
+
+## Tests
+
+I integrate [testcontainers](https://testcontainers.com/) to launch a postgresql container for the tests.
+It will be a good exercise to use testcontainers and to understand how it works.
+For the installation, I followed the [quickstart](https://golang.testcontainers.org/quickstart/) of testcontainers.
+Then I used [postgres container](https://golang.testcontainers.org/modules/postgres/) to launch a postgres container for the tests.
+I add a containers file to centralize the containers configuration.
+In the same way, I add a migrations file to centralize the goose migrations configuration.
+Then I use both containers and migrations in the tests.
+To launch only one container for all the tests,
+I use the test main function to launch the container and to close it at the end of the tests.
