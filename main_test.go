@@ -1,16 +1,15 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"testing"
 
-	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
-	"github.com/joho/godotenv"
-
 	// don't forget to import the driver ;)
+	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 	_ "github.com/lib/pq"
 )
 
@@ -24,18 +23,34 @@ func TestMain(m *testing.M) {
 	var err error
 	fmt.Println("Initializing test suite")
 
-	if err := godotenv.Load(); err != nil {
-		log.New(os.Stderr, "Error loading .env file", 0)
-	}
-	dbURL := os.Getenv("DB_URL")
-	if dbURL == "" {
-		log.Fatal("DB_URL env variable not set")
+	pgContainer, err := database.NewPGContainer()
+	if err != nil {
+		log.Fatal("cannot create a new container:", err)
 	}
 
-	testDB, err = sql.Open("postgres", dbURL)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	defer func() {
+		if err := pgContainer.Terminate(ctx); err != nil {
+			log.Fatal("cannot terminate the container:", err)
+		}
+	}()
+
+	connString, err := pgContainer.ConnString(ctx)
+	if err != nil {
+		log.Fatal("cannot get the connection string:", err)
+	}
+
+	testDB, err = sql.Open("postgres", connString)
 	if err != nil {
 		log.Fatal("cannot connect to the db:", err)
 	}
+
+	if err = database.MigrateUp(testDB, "sql/schema"); err != nil {
+		log.Fatal("cannot migrate up:", err)
+	}
+
 	testQueries = database.New(testDB)
 	_, err = testDB.Exec("TRUNCATE TABLE users")
 	if err != nil {
