@@ -61,3 +61,17 @@ func TestQueries_DeleteUserDeleteFeeds(t *testing.T) {
 	// feeds from the user should be deleted
 	assert.False(t, query2.Next())
 }
+
+func TestQueries_GetUserFromId(t *testing.T) {
+	user := CreateRandomUser(t)
+
+	user2, err := testQueries.GetUserFromId(context.Background(), user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, user, user2)
+
+	testQueries.db.QueryContext(context.Background(), "Delete from users where id = $1", user.ID)
+
+	user3, err := testQueries.GetUserFromId(context.Background(), user.ID)
+	require.Error(t, err)
+	assert.Empty(t, user3)
+}

@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 )
@@ -48,14 +48,14 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // GetUser get a user from the authorization header.
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	token, err := getAuthHeader(r.Header)
-	if err != nil || token == "" {
-		slog.Log(r.Context(), slog.LevelInfo, "get auth header: %s", err)
+	userIDVal := r.Context().Value("user")
+	userID, ok := userIDVal.(uuid.UUID)
+	if userIDVal == nil || !ok {
 		respondWithError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
 		return
 	}
 
-	user, err := h.db.GetUserFromApiKey(r.Context(), token)
+	user, err := h.db.GetUserFromId(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			respondWithError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
@@ -68,18 +68,4 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, user)
-}
-
-func getAuthHeader(h http.Header) (string, error) {
-	authHeader := h.Get("Authorization")
-	if authHeader == "" {
-		return "", fmt.Errorf("missing authorization header")
-	}
-
-	split := strings.Split(authHeader, " ")
-	if strings.ToLower(split[0]) != "apikey" {
-		return "", fmt.Errorf("invalid authorization header")
-	}
-
-	return split[1], nil
 }

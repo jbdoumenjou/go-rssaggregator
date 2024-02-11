@@ -37,6 +37,7 @@ func addV1Routes(r chi.Router, db database.Querier) {
 	r.Get("/err", errorHandler)
 
 	userHandler := NewUserHandler(db)
+	authHandler := NewAuthMiddleware(db)
 	r.Post("/users", userHandler.CreateUser)
-	r.Get("/users", userHandler.GetUser)
+	r.Get("/users", authHandler.AuthMiddleware(userHandler.GetUser))
 }

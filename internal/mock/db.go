@@ -12,6 +12,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	uuid "github.com/google/uuid"
 	database "github.com/jbdoumenjou/go-rssaggregator/internal/database"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -82,4 +83,19 @@ func (m *MockQuerier) GetUserFromApiKey(arg0 context.Context, arg1 string) (data
 func (mr *MockQuerierMockRecorder) GetUserFromApiKey(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserFromApiKey", reflect.TypeOf((*MockQuerier)(nil).GetUserFromApiKey), arg0, arg1)
+}
+
+// GetUserFromId mocks base method.
+func (m *MockQuerier) GetUserFromId(arg0 context.Context, arg1 uuid.UUID) (database.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserFromId", arg0, arg1)
+	ret0, _ := ret[0].(database.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserFromId indicates an expected call of GetUserFromId.
+func (mr *MockQuerierMockRecorder) GetUserFromId(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserFromId", reflect.TypeOf((*MockQuerier)(nil).GetUserFromId), arg0, arg1)
 }
