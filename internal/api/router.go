@@ -35,8 +35,8 @@ func NewRouter(db database.Querier) http.Handler {
 }
 
 func addV1Routes(r chi.Router, db database.Querier) {
-	r.Get("/readiness", handler.ReadinessHandler)
-	r.Get("/err", handler.ErrorHandler)
+	r.Get("/readiness", handler.Readiness)
+	r.Get("/err", handler.Error)
 
 	middleware := middleware.NewAuthMiddleware(db)
 
