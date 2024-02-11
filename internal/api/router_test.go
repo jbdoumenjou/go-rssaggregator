@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"testing"
 	"time"
 
@@ -194,12 +195,12 @@ func TestUserHandler_GetUser(t *testing.T) {
 }
 
 type feed struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	URL       string `json:"url"`
-	UserID    string `json:"user_id"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	URL       string    `json:"url"`
+	UserID    string    `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func createFeed(t *testing.T, r http.Handler, u user) feed {
@@ -225,12 +226,12 @@ func createFeed(t *testing.T, r http.Handler, u user) feed {
 	require.Equal(t, http.StatusOK, rr.Code)
 
 	var actualFeed struct {
-		ID        string `json:"id"`
-		Name      string `json:"name"`
-		URL       string `json:"url"`
-		UserID    string `json:"user_id"`
-		CreatedAt string `json:"created_at"`
-		UpdatedAt string `json:"updated_at"`
+		ID        string    `json:"id"`
+		Name      string    `json:"name"`
+		URL       string    `json:"url"`
+		UserID    string    `json:"user_id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
 	}
 	err = json.Unmarshal(rr.Body.Bytes(), &actualFeed)
 	require.NoError(t, err)
@@ -251,4 +252,38 @@ func TestFeedHandler_CreateFeed(t *testing.T) {
 	user := createUser(t, router)
 	feed := createFeed(t, router, user)
 	assert.NotEmpty(t, feed)
+}
+
+func TestFeedHandler_ListFeeds(t *testing.T) {
+	router := NewRouter(testQueries)
+	user := createUser(t, router)
+	var feeds []feed
+	for i := 0; i < 10; i++ {
+		feeds = append(feeds, createFeed(t, router, user))
+	}
+
+	// Ensure that the feeds are sorted by the most recent first
+	sort.Slice(feeds, func(i, j int) bool {
+		return feeds[i].UpdatedAt.After(feeds[j].CreatedAt)
+	})
+
+	req, err := http.NewRequest(http.MethodGet, "/v1/feeds", http.NoBody)
+	require.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusOK, rr.Code)
+
+	var actualFeeds []feed
+	err = json.Unmarshal(rr.Body.Bytes(), &actualFeeds)
+	require.NoError(t, err)
+	assert.Len(t, actualFeeds, 10)
+
+	for i, feed := range feeds {
+		assert.Equal(t, feed.Name, actualFeeds[i].Name)
+		assert.Equal(t, feed.URL, actualFeeds[i].URL)
+		assert.Equal(t, feed.UserID, actualFeeds[i].UserID)
+		assert.Equal(t, feed.CreatedAt, actualFeeds[i].CreatedAt)
+		assert.Equal(t, feed.UpdatedAt, actualFeeds[i].UpdatedAt)
+	}
 }

@@ -37,21 +37,9 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	connString, err := pgContainer.ConnString(ctx)
-	if err != nil {
-		log.Fatal("cannot get the connection string:", err)
-	}
-
-	testDB, err = sql.Open("postgres", connString)
-	if err != nil {
-		log.Fatal("cannot connect to the db:", err)
-	}
-
-	if err = database.MigrateUp(testDB, "../../sql/schema"); err != nil {
-		log.Fatal("cannot migrate up:", err)
-	}
-
+	testDB = pgContainer.DB()
 	testQueries = database.New(testDB)
+
 	_, err = testDB.Exec("DELETE from users")
 	if err != nil {
 		log.Fatal(err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/jbdoumenjou/go-rssaggregator/internal/generator"
@@ -87,4 +88,83 @@ func TestQueries_CreateFeed_ExistingURL(t *testing.T) {
 	ok := errors.As(err, &pqErr)
 	require.True(t, ok)
 	assert.Equal(t, "unique_violation", pqErr.Code.Name())
+}
+
+func TestQueries_ListFeeds(t *testing.T) {
+	// Use a separate container to avoid conflicts with the CreateFeed tests
+	// TODO: find a more elegant way to do this
+	container, err := NewPGContainer()
+	require.NoError(t, err)
+	defer container.Terminate(context.Background())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	db := container.DB()
+
+	queries := New(db)
+	user, err := queries.CreateUser(ctx, generator.RandomString(6))
+	require.NoError(t, err)
+	require.NotEmpty(t, user)
+
+	var feeds []Feed
+	for i := 0; i < 10; i++ {
+		feed, err := queries.CreateFeed(ctx, CreateFeedParams{
+			Name:   generator.RandomString(12),
+			Url:    generator.RandomURL(6),
+			UserID: uuid.NullUUID{UUID: user.ID, Valid: true},
+		})
+		require.NoError(t, err)
+		feeds = append(feeds, feed)
+	}
+
+	// Ensure that the feeds are sorted by the most recent first
+	sort.Slice(feeds, func(i, j int) bool {
+		return feeds[i].UpdatedAt.After(feeds[j].CreatedAt)
+	})
+
+	tests := []struct {
+		name   string
+		params ListFeedsParams
+		want   []Feed
+	}{
+		{
+			name:   "offset 0, limit 5",
+			params: ListFeedsParams{Limit: 5, Offset: 0},
+			want:   feeds[:5],
+		},
+		{
+			name:   "offset 1, limit 5",
+			params: ListFeedsParams{Limit: 5, Offset: 1},
+			want:   feeds[1:6],
+		},
+		{
+			name:   "offset 1, limit 5",
+			params: ListFeedsParams{Limit: 5, Offset: 5},
+			want:   feeds[5:10],
+		},
+		{
+			name:   "Out of limit: offset 11, limit 5",
+			params: ListFeedsParams{Limit: 5, Offset: 11},
+			want:   []Feed{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			list, err := queries.ListFeeds(ctx, test.params)
+			require.NoError(t, err)
+			assert.Len(t, list, len(test.want))
+
+			for i, feed := range test.want {
+				assert.Equal(t, feed.Name, list[i].Name)
+				assert.Equal(t, feed.Url, list[i].Url)
+				assert.Equal(t, feed.UserID, list[i].UserID)
+				assert.Equal(t, feed.CreatedAt, list[i].CreatedAt)
+				assert.Equal(t, feed.UpdatedAt, list[i].UpdatedAt)
+			}
+		})
+	}
 }

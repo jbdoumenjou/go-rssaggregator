@@ -46,4 +46,5 @@ func addV1Routes(r chi.Router, db database.Querier) {
 
 	feedHandler := handler.NewFeedHandler(db)
 	r.Post("/feeds", middleware.Authenticate(feedHandler.CreateFeed))
+	r.Get("/feeds", feedHandler.ListFeeds)
 }

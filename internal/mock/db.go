@@ -99,3 +99,18 @@ func (mr *MockQuerierMockRecorder) GetUserFromId(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserFromId", reflect.TypeOf((*MockQuerier)(nil).GetUserFromId), arg0, arg1)
 }
+
+// ListFeeds mocks base method.
+func (m *MockQuerier) ListFeeds(arg0 context.Context, arg1 database.ListFeedsParams) ([]database.Feed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFeeds", arg0, arg1)
+	ret0, _ := ret[0].([]database.Feed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFeeds indicates an expected call of ListFeeds.
+func (mr *MockQuerierMockRecorder) ListFeeds(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFeeds", reflect.TypeOf((*MockQuerier)(nil).ListFeeds), arg0, arg1)
+}
