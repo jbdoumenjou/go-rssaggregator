@@ -15,6 +15,7 @@ type Querier interface {
 	CreateUser(ctx context.Context, name string) (User, error)
 	GetUserFromApiKey(ctx context.Context, apiKey string) (User, error)
 	GetUserFromId(ctx context.Context, id uuid.UUID) (User, error)
+	ListFeeds(ctx context.Context, arg ListFeedsParams) ([]Feed, error)
 }
 
 var _ Querier = (*Queries)(nil)

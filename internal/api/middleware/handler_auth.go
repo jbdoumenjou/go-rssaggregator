@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/jbdoumenjou/go-rssaggregator/internal/api/json"
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/respond"
 
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 )
@@ -33,20 +33,20 @@ func (a *AuthHandler) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := getAuthHeader(r.Header)
 		if err != nil || token == "" {
-			json.RespondWithError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
+			respond.WithJSONError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
 			return
 		}
 
 		user, err := a.store.GetUserFromApiKey(r.Context(), token)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				json.RespondWithError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
+				respond.WithJSONError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
 				return
 			}
 
 			// Error should be filtered here.
 			slog.Log(r.Context(), slog.LevelError, "get user: %v", err)
-			json.RespondWithError(w, http.StatusInternalServerError, err.Error())
+			respond.WithJSONError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 
 type PGContainer struct {
 	pgc *postgres.PostgresContainer
+	db  *sql.DB
 }
 
 func NewPGContainer() (*PGContainer, error) {
@@ -22,6 +24,7 @@ func NewPGContainer() (*PGContainer, error) {
 	dbUser := "root"
 	dbPassword := "secret"
 
+	// Creates the container
 	postgresContainer, err := postgres.RunContainer(ctx,
 		testcontainers.WithImage("postgres:15"),
 		postgres.WithDatabase(dbName),
@@ -32,23 +35,35 @@ func NewPGContainer() (*PGContainer, error) {
 				WithOccurrence(2).
 				WithStartupTimeout(5*time.Second)),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to start container: %w", err)
 	}
-	ports, err := postgresContainer.Ports(ctx)
+
+	// Gets the connection string
+	connString, err := postgresContainer.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get container ports: %w", err)
+		return nil, fmt.Errorf("cannot get the connection string: %w", err)
 	}
-	fmt.Println(ports)
+
+	// Connects to the database
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		return nil, fmt.Errorf("cannot connect to the db: %w", err)
+	}
+
+	// Migrates the database
+	if err = MigrateUp(db, "../../sql/schema"); err != nil {
+		return nil, fmt.Errorf("cannot migrate up: %w", err)
+	}
 
 	return &PGContainer{
 		pgc: postgresContainer,
+		db:  db,
 	}, nil
 }
 
-func (p *PGContainer) ConnString(ctx context.Context) (string, error) {
-	return p.pgc.ConnectionString(ctx, "sslmode=disable")
+func (p *PGContainer) DB() *sql.DB {
+	return p.db
 }
 
 func (p *PGContainer) Terminate(ctx context.Context) error {
