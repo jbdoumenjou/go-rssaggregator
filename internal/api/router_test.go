@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -286,4 +287,37 @@ func TestFeedHandler_ListFeeds(t *testing.T) {
 		assert.Equal(t, feed.CreatedAt, actualFeeds[i].CreatedAt)
 		assert.Equal(t, feed.UpdatedAt, actualFeeds[i].UpdatedAt)
 	}
+}
+
+func TestFeedHandler_CreateFeedFollows(t *testing.T) {
+	router := NewRouter(testQueries)
+
+	user := createUser(t, router)
+	feed := createFeed(t, router, user)
+
+	payload := strings.NewReader(`{"feed_id":"` + feed.ID + `"}`)
+	req, err := http.NewRequest(http.MethodPost, "/v1/feed_follows", payload)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "ApiKey "+user.ApiKey)
+
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusOK, rr.Code)
+
+	var actualFeedFollows struct {
+		ID        string    `json:"id"`
+		UserID    string    `json:"user_id"`
+		FeedID    string    `json:"feed_id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+
+	err = json.Unmarshal(rr.Body.Bytes(), &actualFeedFollows)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, actualFeedFollows.ID)
+	require.Equal(t, user.ID, actualFeedFollows.UserID)
+	require.Equal(t, feed.ID, actualFeedFollows.FeedID)
+	require.NotEmpty(t, actualFeedFollows.CreatedAt)
+	require.NotEmpty(t, actualFeedFollows.UpdatedAt)
 }

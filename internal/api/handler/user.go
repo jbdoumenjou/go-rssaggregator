@@ -69,3 +69,14 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	respond.WithJSON(w, http.StatusOK, user)
 }
+
+func GetUserIDFromContext(w http.ResponseWriter, r *http.Request) (uuid.UUID, error) {
+	userIDVal := r.Context().Value("user")
+	userID, ok := userIDVal.(uuid.UUID)
+
+	if userIDVal == nil || !ok {
+		return uuid.UUID{}, errors.New("cannot get user id from context")
+	}
+
+	return userID, nil
+}
