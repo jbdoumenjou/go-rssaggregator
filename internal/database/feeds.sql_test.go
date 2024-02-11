@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/jbdoumenjou/go-rssaggregator/internal/generator"
+
 	"github.com/lib/pq"
 
 	"github.com/google/uuid"
@@ -22,8 +24,8 @@ func CreateRandomFeed(t *testing.T) Feed {
 	require.NotEmpty(t, user.ID)
 
 	feedParams := CreateFeedParams{
-		Name:   RandomString(12),
-		Url:    fmt.Sprintf("https://%s.%s", RandomString(8), RandomString(3)),
+		Name:   generator.RandomString(12),
+		Url:    fmt.Sprintf("https://%s.%s", generator.RandomString(8), generator.RandomString(3)),
 		UserID: uuid.NullUUID{UUID: user.ID, Valid: true},
 	}
 
@@ -49,8 +51,8 @@ func TestQueries_CreateFeed(t *testing.T) {
 
 func TestQueries_CreateFeed_BadUserID(t *testing.T) {
 	feedParams := CreateFeedParams{
-		Name:   RandomString(12),
-		Url:    fmt.Sprintf("https://%s.%s", RandomString(8), RandomString(3)),
+		Name:   generator.RandomString(12),
+		Url:    fmt.Sprintf("https://%s.%s", generator.RandomString(8), generator.RandomString(3)),
 		UserID: uuid.NullUUID{UUID: uuid.New(), Valid: true},
 	}
 

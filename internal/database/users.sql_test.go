@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jbdoumenjou/go-rssaggregator/internal/generator"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +14,7 @@ import (
 func CreateRandomUser(t *testing.T) User {
 	t.Helper()
 
-	name := RandomString(12)
+	name := generator.RandomString(12)
 	user, err := testQueries.CreateUser(context.Background(), name)
 	require.NoError(t, err)
 	require.NotEmpty(t, user)

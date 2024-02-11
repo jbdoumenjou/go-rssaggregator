@@ -3,12 +3,10 @@ package api
 import (
 	"net/http"
 
-	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
-
-	"github.com/jbdoumenjou/go-rssaggregator/internal/api/handler"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/handler"
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 )
 
@@ -40,8 +38,12 @@ func addV1Routes(r chi.Router, db database.Querier) {
 	r.Get("/readiness", handler.ReadinessHandler)
 	r.Get("/err", handler.ErrorHandler)
 
-	userHandler := handler.NewUserHandler(db)
 	middleware := middleware.NewAuthMiddleware(db)
+
+	userHandler := handler.NewUserHandler(db)
 	r.Post("/users", userHandler.CreateUser)
 	r.Get("/users", middleware.Authenticate(userHandler.GetUser))
+
+	feedHandler := handler.NewFeedHandler(db)
+	r.Post("/feeds", middleware.Authenticate(feedHandler.CreateFeed))
 }
