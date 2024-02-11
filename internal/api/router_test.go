@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/jbdoumenjou/go-rssaggregator/internal/generator"
 
 	"github.com/stretchr/testify/assert"
 
@@ -189,4 +191,64 @@ func TestUserHandler_GetUser(t *testing.T) {
 			assert.JSONEq(t, tc.expectedBody, rr.Body.String())
 		})
 	}
+}
+
+type feed struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	URL       string `json:"url"`
+	UserID    string `json:"user_id"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+func createFeed(t *testing.T, r http.Handler, u user) feed {
+	t.Helper()
+
+	feed := struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	}{
+		Name: generator.RandomString(10),
+		URL:  generator.RandomURL(6),
+	}
+	data, err := json.Marshal(feed)
+	require.NoError(t, err)
+	req, err := http.NewRequest(http.MethodPost, "/v1/feeds", bytes.NewReader(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "ApiKey "+u.ApiKey)
+
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusOK, rr.Code)
+
+	var actualFeed struct {
+		ID        string `json:"id"`
+		Name      string `json:"name"`
+		URL       string `json:"url"`
+		UserID    string `json:"user_id"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+	}
+	err = json.Unmarshal(rr.Body.Bytes(), &actualFeed)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, actualFeed.ID)
+	require.Equal(t, feed.Name, actualFeed.Name)
+	require.Equal(t, feed.URL, actualFeed.URL)
+	require.NotEmpty(t, actualFeed.UserID)
+	require.NotEmpty(t, actualFeed.CreatedAt)
+	require.NotEmpty(t, actualFeed.UpdatedAt)
+
+	return actualFeed
+}
+
+func TestFeedHandler_CreateFeed(t *testing.T) {
+	router := NewRouter(testQueries)
+
+	user := createUser(t, router)
+	feed := createFeed(t, router, user)
+	assert.NotEmpty(t, feed)
 }

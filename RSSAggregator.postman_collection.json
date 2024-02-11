@@ -27,6 +27,52 @@
 			"response": []
 		},
 		{
+			"name": "Get User",
+			"request": {
+				"auth": {
+					"type": "apikey",
+					"apikey": [
+						{
+							"key": "key",
+							"value": "ApiKey",
+							"type": "string"
+						},
+						{
+							"key": "value",
+							"value": "c3a650439642e7898ccef45a45e1f92697132d1b6393e70ea86052bba3c0438f",
+							"type": "string"
+						},
+						{
+							"key": "in",
+							"value": "header",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "ApiKey c3a650439642e7898ccef45a45e1f92697132d1b6393e70ea86052bba3c0438f",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/v1/users",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Err",
 			"request": {
 				"method": "GET",
@@ -70,6 +116,41 @@
 					"path": [
 						"v1",
 						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create feed",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "ApiKey 49c49f5fee3c222726de5549d08f38d66cd6547912d28d1495fafa8be9f7e933",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"my first feed\",\n    \"url\": \"http://www.2600.com/rss.xml\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/feeds",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"feeds"
 					]
 				}
 			},

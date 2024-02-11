@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"context"
@@ -47,12 +47,12 @@ func TestMain(m *testing.M) {
 		log.Fatal("cannot connect to the db:", err)
 	}
 
-	if err = database.MigrateUp(testDB, "sql/schema"); err != nil {
+	if err = database.MigrateUp(testDB, "../../sql/schema"); err != nil {
 		log.Fatal("cannot migrate up:", err)
 	}
 
 	testQueries = database.New(testDB)
-	_, err = testDB.Exec("TRUNCATE TABLE users")
+	_, err = testDB.Exec("DELETE from users")
 	if err != nil {
 		log.Fatal(err)
 	}

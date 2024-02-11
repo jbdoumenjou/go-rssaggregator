@@ -1,6 +1,7 @@
-package database
+package generator
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 )
@@ -18,4 +19,9 @@ func RandomString(n int) string {
 	}
 
 	return sb.String()
+}
+
+// RandomURL generates a random url with a domain name of length n.
+func RandomURL(n int) string {
+	return fmt.Sprintf("https://%s.%s", RandomString(n), RandomString(3))
 }

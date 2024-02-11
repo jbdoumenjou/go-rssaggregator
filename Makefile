@@ -1,11 +1,6 @@
-.PHONY: build run test migrate-up migrate-down help sqlc mock
+DB_URL=postgres://root:secret@localhost:5432/rssagg?sslmode=disable
 
-# Set your environment variables here or override them when calling `make <target>`.
-ifneq ($(wildcard .env),)
-	include .env
-else
-	echo "No .env file found. Please consider creating one."
-endif
+.PHONY: build run test help sqlc mock
 
 help: ## Show this help.
 	@sed -ne '/@sed/!s/## //p' $(MAKEFILE_LIST) | column -tl 2
@@ -22,17 +17,17 @@ db-up: ## Start the database and pgadmin in docker.
 db-down: ## Stop the database and pgadmin.
 	docker-compose down && docker system prune -f
 
+migrate-up: ## Apply all up migrations.
+	goose -dir sql/schema postgres "$(DB_URL)" up
+
+migrate-down: ## Apply all down migrations.
+	goose -dir sql/schema postgres $(DB_URL) down
+
 run: ## Run the application.
 	go run ./...
 
 test: ## Test the application.
 	go test -v ./...
-
-migrate-up: ## Apply all up migrations.
-	goose -dir sql/schema postgres $(DB_URL) up
-
-migrate-down: ## Apply all down migrations.
-	goose -dir sql/schema postgres $(DB_URL) down
 
 sqlc: ## Generate the database code.
 	sqlc generate
