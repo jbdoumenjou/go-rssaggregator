@@ -39,6 +39,21 @@ func (m *MockQuerier) EXPECT() *MockQuerierMockRecorder {
 	return m.recorder
 }
 
+// CreateFeed mocks base method.
+func (m *MockQuerier) CreateFeed(arg0 context.Context, arg1 database.CreateFeedParams) (database.Feed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateFeed", arg0, arg1)
+	ret0, _ := ret[0].(database.Feed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateFeed indicates an expected call of CreateFeed.
+func (mr *MockQuerierMockRecorder) CreateFeed(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFeed", reflect.TypeOf((*MockQuerier)(nil).CreateFeed), arg0, arg1)
+}
+
 // CreateUser mocks base method.
 func (m *MockQuerier) CreateUser(arg0 context.Context, arg1 string) (database.User, error) {
 	m.ctrl.T.Helper()

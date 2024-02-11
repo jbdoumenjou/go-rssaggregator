@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
-
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -39,10 +39,10 @@ func main() {
 	dbQueries := database.New(db)
 
 	// Create a new router.
-	r := NewRouter(dbQueries)
+	r := api.NewRouter(dbQueries)
 
 	// start the server.
-	if err := NewServer("localhost:"+port, r).Start(); err != nil {
+	if err := api.NewServer("localhost:"+port, r).Start(); err != nil {
 		log.Fatal(err)
 	}
 }
