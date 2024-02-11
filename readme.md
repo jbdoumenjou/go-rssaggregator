@@ -17,15 +17,13 @@ A makefile is provided to build and run the project.
 
 ```shell
 $make help
-help:          Show this help.
-build:         clean Build the application.
-clean:         Clean the application.
-run:           Run the application.
-test:          Test the application.
-migrate-up:    Apply all up migrations.
-migrate-down:  Apply all down migrations.
-sqlc:          Generate the database code.
-mock:          Generate a store mock.
+help:   Show this help.
+build:  clean Build the application.
+clean:  Clean the application.
+run:    Run the application.
+test:   Test the application.
+sqlc:   Generate the database code.
+mock:   Generate a store mock.
 ```
 
 # Bootstrap
@@ -82,3 +80,11 @@ In the same way, I add a migrations file to centralize the goose migrations conf
 Then I use both containers and migrations in the tests.
 To launch only one container for all the tests,
 I use the test main function to launch the container and to close it at the end of the tests.
+
+## Comments
+
+I try to follow the course and to understand the code.
+I refactor regularly the code to make it more readable and to use the best practices.
+Sometime, I split the code in several files/package to make it more modular, or just to experiment,
+but it is not always necessary.
+It is a good exercise to understand the code and to make it better.

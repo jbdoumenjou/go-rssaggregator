@@ -1,4 +1,4 @@
-package api
+package middleware
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/json"
 
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 )
@@ -27,24 +29,24 @@ func NewAuthMiddleware(store UserStore) *AuthHandler {
 	return &AuthHandler{store: store}
 }
 
-func (a *AuthHandler) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func (a *AuthHandler) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := getAuthHeader(r.Header)
 		if err != nil || token == "" {
-			respondWithError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
+			json.RespondWithError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
 			return
 		}
 
 		user, err := a.store.GetUserFromApiKey(r.Context(), token)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				respondWithError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
+				json.RespondWithError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
 				return
 			}
 
 			// Error should be filtered here.
 			slog.Log(r.Context(), slog.LevelError, "get user: %v", err)
-			respondWithError(w, http.StatusInternalServerError, err.Error())
+			json.RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
