@@ -1,4 +1,4 @@
-.PHONY: build run test migrate-up migrate-down help sqlc mock
+.PHONY: build run test help sqlc mock
 
 # Set your environment variables here or override them when calling `make <target>`.
 ifneq ($(wildcard .env),)
@@ -16,23 +16,11 @@ build: clean ## Build the application.
 clean: ## Clean the application.
 	rm go-rssaggregator
 
-db-up: ## Start the database and pgadmin in docker.
-	docker-compose up
-
-db-down: ## Stop the database and pgadmin.
-	docker-compose down && docker system prune -f
-
 run: ## Run the application.
 	go run ./...
 
 test: ## Test the application.
 	go test -v ./...
-
-migrate-up: ## Apply all up migrations.
-	goose -dir sql/schema postgres $(DB_URL) up
-
-migrate-down: ## Apply all down migrations.
-	goose -dir sql/schema postgres $(DB_URL) down
 
 sqlc: ## Generate the database code.
 	sqlc generate

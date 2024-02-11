@@ -51,7 +51,7 @@ func TestMain(m *testing.M) {
 	}
 
 	testQueries = New(testDB)
-	_, err = testDB.Exec("TRUNCATE TABLE users")
+	_, err = testDB.Exec("DELETE FROM users")
 	if err != nil {
 		log.Fatal(err)
 	}
