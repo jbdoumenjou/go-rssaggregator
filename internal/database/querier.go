@@ -14,7 +14,7 @@ type Querier interface {
 	CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error)
 	CreateFeedFollows(ctx context.Context, arg CreateFeedFollowsParams) (FeedFollow, error)
 	CreateUser(ctx context.Context, name string) (User, error)
-	DeleteFeedFollows(ctx context.Context, id uuid.UUID) error
+	DeleteFeedFollows(ctx context.Context, arg DeleteFeedFollowsParams) error
 	GetUserFromApiKey(ctx context.Context, apiKey string) (User, error)
 	GetUserFromId(ctx context.Context, id uuid.UUID) (User, error)
 	ListFeedFollows(ctx context.Context, arg ListFeedFollowsParams) ([]FeedFollow, error)

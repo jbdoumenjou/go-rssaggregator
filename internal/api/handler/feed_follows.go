@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/google/uuid"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/api/respond"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
@@ -18,6 +20,7 @@ import (
 type FeedFollowsStore interface {
 	CreateFeedFollows(ctx context.Context, arg database.CreateFeedFollowsParams) (database.FeedFollow, error)
 	ListFeedFollows(ctx context.Context, arg database.ListFeedFollowsParams) ([]database.FeedFollow, error)
+	DeleteFeedFollows(ctx context.Context, arg database.DeleteFeedFollowsParams) error
 }
 
 // FeedFollowsHandler is the handler for feed follows related requests.
@@ -117,4 +120,30 @@ func (h *FeedFollowsHandler) ListFeedFollows(w http.ResponseWriter, r *http.Requ
 	}
 
 	respond.WithJSON(w, http.StatusOK, feeds)
+}
+
+// DeleteFeedFollows deletes a feed follows.
+func (h *FeedFollowsHandler) DeleteFeedFollows(w http.ResponseWriter, r *http.Request) {
+	userIDVal := r.Context().Value("user")
+	userID, ok := userIDVal.(uuid.UUID)
+	if userIDVal == nil || !ok {
+		respond.WithJSONError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
+		return
+	}
+
+	// Get the 'id' parameter from the URL path using chi
+	id := chi.URLParam(r, "id")
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	if err := h.store.DeleteFeedFollows(ctx, database.DeleteFeedFollowsParams{
+		ID:     uuid.MustParse(id),
+		UserID: uuid.NullUUID{UUID: userID, Valid: true},
+	}); err != nil {
+		respond.WithJSONError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

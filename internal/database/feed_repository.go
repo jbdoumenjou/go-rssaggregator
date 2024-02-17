@@ -88,3 +88,13 @@ func (f FeedRepository) ListFeedFollows(ctx context.Context, arg ListFeedFollows
 
 	return follows, nil
 }
+
+// DeleteFeedFollows deletes a feed follow.
+func (f FeedRepository) DeleteFeedFollows(ctx context.Context, arg DeleteFeedFollowsParams) error {
+	err := f.queries.DeleteFeedFollows(ctx, arg)
+	if err != nil {
+		return fmt.Errorf("error deleting feed follow: %w", err)
+	}
+
+	return nil
+}

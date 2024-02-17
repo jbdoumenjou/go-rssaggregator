@@ -62,4 +62,5 @@ func (r Router) addV1Routes() {
 
 	v1.Post("/feed_follows", r.authHandler.Authenticate(r.feedFollowsHandler.CreateFeedFollows))
 	v1.Get("/feed_follows", r.authHandler.Authenticate(r.feedFollowsHandler.ListFeedFollows))
+	v1.Delete("/feed_follows/{id}", r.authHandler.Authenticate(r.feedFollowsHandler.DeleteFeedFollows))
 }

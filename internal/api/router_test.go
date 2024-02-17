@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -406,4 +407,53 @@ func TestFeedHandler_CreateFeedFollows(t *testing.T) {
 	require.Equal(t, feed.ID, actualFeedFollows.FeedID)
 	require.NotEmpty(t, actualFeedFollows.CreatedAt)
 	require.NotEmpty(t, actualFeedFollows.UpdatedAt)
+}
+
+func TestFeedHandler_DeleteFeedFollows(t *testing.T) {
+	userRepository := database.NewUserRepository(testDB)
+	userHandler := handler.NewUserHandler(userRepository)
+	authMiddleware := middleware.NewAuthMiddleware(userRepository)
+
+	feedRepository := database.NewFeedRepository(testDB)
+	feedHandler := handler.NewFeedHandler(feedRepository)
+	feedFollowsHandler := handler.NewFeedFollowsHandler(feedRepository)
+
+	router := NewRouter(authMiddleware, userHandler, feedHandler, feedFollowsHandler)
+
+	user := createUser(t, router)
+	_, follow := createFeed(t, router, user)
+	userID, err := uuid.Parse(user.ID)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	listFollowsResponse, err := feedRepository.ListFeedFollows(ctx, database.ListFeedFollowsParams{
+		UserID: uuid.NullUUID{
+			UUID:  userID,
+			Valid: true,
+		},
+		Limit:  10,
+		Offset: 0,
+	})
+	require.NotEmpty(t, listFollowsResponse)
+	require.Equal(t, listFollowsResponse[0].FeedID.UUID, follow.FeedID.UUID)
+
+	req, err := http.NewRequest(http.MethodDelete, "/v1/feed_follows/"+follow.ID.String(), http.NoBody)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "ApiKey "+user.ApiKey)
+
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusNoContent, rr.Code)
+
+	listFollowsResponse, err = feedRepository.ListFeedFollows(ctx, database.ListFeedFollowsParams{
+		UserID: uuid.NullUUID{
+			UUID:  userID,
+			Valid: false,
+		},
+		Limit:  10,
+		Offset: 0,
+	})
+	assert.Empty(t, listFollowsResponse)
 }
