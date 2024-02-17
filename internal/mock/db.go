@@ -99,21 +99,6 @@ func (mr *MockQuerierMockRecorder) DeleteFeedFollows(arg0, arg1 any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFeedFollows", reflect.TypeOf((*MockQuerier)(nil).DeleteFeedFollows), arg0, arg1)
 }
 
-// GetFeedFollows mocks base method.
-func (m *MockQuerier) GetFeedFollows(arg0 context.Context, arg1 uuid.NullUUID) ([]database.FeedFollow, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFeedFollows", arg0, arg1)
-	ret0, _ := ret[0].([]database.FeedFollow)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFeedFollows indicates an expected call of GetFeedFollows.
-func (mr *MockQuerierMockRecorder) GetFeedFollows(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeedFollows", reflect.TypeOf((*MockQuerier)(nil).GetFeedFollows), arg0, arg1)
-}
-
 // GetUserFromApiKey mocks base method.
 func (m *MockQuerier) GetUserFromApiKey(arg0 context.Context, arg1 string) (database.User, error) {
 	m.ctrl.T.Helper()
@@ -142,6 +127,21 @@ func (m *MockQuerier) GetUserFromId(arg0 context.Context, arg1 uuid.UUID) (datab
 func (mr *MockQuerierMockRecorder) GetUserFromId(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserFromId", reflect.TypeOf((*MockQuerier)(nil).GetUserFromId), arg0, arg1)
+}
+
+// ListFeedFollows mocks base method.
+func (m *MockQuerier) ListFeedFollows(arg0 context.Context, arg1 database.ListFeedFollowsParams) ([]database.FeedFollow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFeedFollows", arg0, arg1)
+	ret0, _ := ret[0].([]database.FeedFollow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFeedFollows indicates an expected call of ListFeedFollows.
+func (mr *MockQuerierMockRecorder) ListFeedFollows(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFeedFollows", reflect.TypeOf((*MockQuerier)(nil).ListFeedFollows), arg0, arg1)
 }
 
 // ListFeeds mocks base method.

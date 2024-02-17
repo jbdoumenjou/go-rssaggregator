@@ -10,6 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
+
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/handler"
+
 	"github.com/jbdoumenjou/go-rssaggregator/internal/generator"
 
 	"github.com/stretchr/testify/assert"
@@ -23,7 +27,10 @@ import (
 )
 
 func TestReadiness(t *testing.T) {
-	r := NewRouter(nil)
+	userRepository := database.NewUserRepository(testDB)
+	userHandler := handler.NewUserHandler(userRepository)
+	r := NewRouter(nil, userHandler, nil, nil)
+
 	req, err := http.NewRequest(http.MethodGet, "/v1/readiness", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
@@ -40,7 +47,10 @@ func TestReadiness(t *testing.T) {
 }
 
 func TestErr(t *testing.T) {
-	r := NewRouter(nil)
+	userRepository := database.NewUserRepository(testDB)
+	userHandler := handler.NewUserHandler(userRepository)
+	r := NewRouter(nil, userHandler, nil, nil)
+
 	req, err := http.NewRequest(http.MethodGet, "/v1/err", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +112,13 @@ func createUser(t *testing.T, r http.Handler) user {
 }
 
 func TestUserHandler_db_CreateUser(t *testing.T) {
-	createUser(t, NewRouter(testQueries))
+	userRepository := database.NewUserRepository(testDB)
+	userHandler := handler.NewUserHandler(userRepository)
+	router := NewRouter(nil, userHandler, nil, nil)
+
+	u := createUser(t, router)
+	require.NotEmpty(t, u)
+	require.NotEmpty(t, u.ID)
 }
 
 // This test is a poc to show how to mock a database call.
@@ -120,11 +136,19 @@ func TestUserHandler_mock_CreateUser(t *testing.T) {
 		UpdatedAt: now,
 	}, nil)
 
-	createUser(t, NewRouter(querier))
+	userHandler := handler.NewUserHandler(querier)
+	router := NewRouter(nil, userHandler, nil, nil)
+
+	createUser(t, router)
 }
 
 func TestUserHandler_GetUser(t *testing.T) {
-	r := NewRouter(testQueries)
+	userRepository := database.NewUserRepository(testDB)
+	userHandler := handler.NewUserHandler(userRepository)
+	authMiddleware := middleware.NewAuthMiddleware(userRepository)
+
+	r := NewRouter(authMiddleware, userHandler, nil, nil)
+
 	user1 := createUser(t, r)
 
 	tests := []struct {
@@ -204,7 +228,15 @@ type feed struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func createFeed(t *testing.T, r http.Handler, u user) feed {
+type feedFollow struct {
+	ID        uuid.UUID     `json:"id"`
+	FeedID    uuid.NullUUID `json:"feed_id"`
+	UserID    uuid.NullUUID `json:"user_id"`
+	CreatedAt time.Time     `json:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
+}
+
+func createFeed(t *testing.T, r http.Handler, u user) (feed, feedFollow) {
 	t.Helper()
 
 	feed := struct {
@@ -226,17 +258,30 @@ func createFeed(t *testing.T, r http.Handler, u user) feed {
 	r.ServeHTTP(rr, req)
 	require.Equal(t, http.StatusOK, rr.Code)
 
-	var actualFeed struct {
-		ID        string    `json:"id"`
-		Name      string    `json:"name"`
-		URL       string    `json:"url"`
-		UserID    string    `json:"user_id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
+	var actualResponse struct {
+		Feed struct {
+			ID        string    `json:"id"`
+			Name      string    `json:"name"`
+			URL       string    `json:"url"`
+			UserID    string    `json:"user_id"`
+			CreatedAt time.Time `json:"created_at"`
+			UpdatedAt time.Time `json:"updated_at"`
+		}
+		FeedFollow struct {
+			ID        uuid.UUID     `json:"id"`
+			FeedID    uuid.NullUUID `json:"feed_id"`
+			UserID    uuid.NullUUID `json:"user_id"`
+			CreatedAt time.Time     `json:"created_at"`
+			UpdatedAt time.Time     `json:"updated_at"`
+		} `json:"feed_follow"`
 	}
-	err = json.Unmarshal(rr.Body.Bytes(), &actualFeed)
+	err = json.Unmarshal(rr.Body.Bytes(), &actualResponse)
 	require.NoError(t, err)
 
+	require.NotEmpty(t, actualResponse)
+	require.NotEmpty(t, actualResponse.Feed)
+
+	actualFeed := actualResponse.Feed
 	require.NotEmpty(t, actualFeed.ID)
 	require.Equal(t, feed.Name, actualFeed.Name)
 	require.Equal(t, feed.URL, actualFeed.URL)
@@ -244,23 +289,56 @@ func createFeed(t *testing.T, r http.Handler, u user) feed {
 	require.NotEmpty(t, actualFeed.CreatedAt)
 	require.NotEmpty(t, actualFeed.UpdatedAt)
 
-	return actualFeed
+	require.NotEmpty(t, actualResponse)
+	require.NotEmpty(t, actualResponse.Feed)
+
+	require.NotEmpty(t, actualResponse.FeedFollow)
+
+	actualFeedFollow := actualResponse.FeedFollow
+	require.NotEmpty(t, actualFeedFollow.ID)
+	require.NotEmpty(t, actualFeedFollow.FeedID)
+	require.NotEmpty(t, actualFeedFollow.FeedID)
+	require.NotEmpty(t, actualFeedFollow.UserID)
+	require.NotEmpty(t, actualFeedFollow.CreatedAt)
+	require.NotEmpty(t, actualFeedFollow.UpdatedAt)
+
+	require.NotEmpty(t, actualResponse)
+	require.NotEmpty(t, actualResponse.Feed)
+
+	return actualFeed, actualFeedFollow
 }
 
 func TestFeedHandler_CreateFeed(t *testing.T) {
-	router := NewRouter(testQueries)
+	userRepository := database.NewUserRepository(testDB)
+	userHandler := handler.NewUserHandler(userRepository)
+	authMiddleware := middleware.NewAuthMiddleware(userRepository)
+
+	feedRepository := database.NewFeedRepository(testDB)
+	feedHandler := handler.NewFeedHandler(feedRepository)
+
+	router := NewRouter(authMiddleware, userHandler, feedHandler, nil)
 
 	user := createUser(t, router)
-	feed := createFeed(t, router, user)
+	feed, feedFollow := createFeed(t, router, user)
 	assert.NotEmpty(t, feed)
+	assert.NotEmpty(t, feedFollow)
 }
 
 func TestFeedHandler_ListFeeds(t *testing.T) {
-	router := NewRouter(testQueries)
+	userRepository := database.NewUserRepository(testDB)
+	userHandler := handler.NewUserHandler(userRepository)
+	authMiddleware := middleware.NewAuthMiddleware(userRepository)
+
+	feedRepository := database.NewFeedRepository(testDB)
+	feedHandler := handler.NewFeedHandler(feedRepository)
+
+	router := NewRouter(authMiddleware, userHandler, feedHandler, nil)
+
 	user := createUser(t, router)
 	var feeds []feed
 	for i := 0; i < 10; i++ {
-		feeds = append(feeds, createFeed(t, router, user))
+		f, _ := createFeed(t, router, user)
+		feeds = append(feeds, f)
 	}
 
 	// Ensure that the feeds are sorted by the most recent first
@@ -290,10 +368,18 @@ func TestFeedHandler_ListFeeds(t *testing.T) {
 }
 
 func TestFeedHandler_CreateFeedFollows(t *testing.T) {
-	router := NewRouter(testQueries)
+	userRepository := database.NewUserRepository(testDB)
+	userHandler := handler.NewUserHandler(userRepository)
+	authMiddleware := middleware.NewAuthMiddleware(userRepository)
+
+	feedRepository := database.NewFeedRepository(testDB)
+	feedHandler := handler.NewFeedHandler(feedRepository)
+	feedFollowsHandler := handler.NewFeedFollowsHandler(feedRepository)
+
+	router := NewRouter(authMiddleware, userHandler, feedHandler, feedFollowsHandler)
 
 	user := createUser(t, router)
-	feed := createFeed(t, router, user)
+	feed, _ := createFeed(t, router, user)
 
 	payload := strings.NewReader(`{"feed_id":"` + feed.ID + `"}`)
 	req, err := http.NewRequest(http.MethodPost, "/v1/feed_follows", payload)

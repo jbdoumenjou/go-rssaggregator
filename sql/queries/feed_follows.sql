@@ -7,6 +7,9 @@ RETURNING *;
 DELETE FROM feed_follows
 WHERE id = $1;
 
--- name: GetFeedFollows :many
+-- name: ListFeedFollows :many
 SELECT * FROM feed_follows
-WHERE user_id = $1;
+WHERE user_id = $1
+ORDER BY updated_at DESC
+LIMIT $2
+OFFSET $3;

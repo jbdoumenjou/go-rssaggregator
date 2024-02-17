@@ -7,10 +7,18 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/api/handler"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
-	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 )
 
-func NewRouter(db database.Querier) http.Handler {
+type Router struct {
+	mux *chi.Mux
+
+	authHandler        *middleware.AuthHandler
+	userHandler        *handler.UserHandler
+	feedHandler        *handler.FeedHandler
+	feedFollowsHandler *handler.FeedFollowsHandler
+}
+
+func NewRouter(authHandler *middleware.AuthHandler, userHandler *handler.UserHandler, feedHandler *handler.FeedHandler, feedFollowsHandler *handler.FeedFollowsHandler) http.Handler {
 	r := chi.NewRouter()
 
 	// Basic CORS
@@ -26,28 +34,32 @@ func NewRouter(db database.Querier) http.Handler {
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
-	// Adds a v1 subrouter.
-	v1 := chi.NewRouter()
-	r.Mount("/v1", v1)
-	addV1Routes(v1, db)
+	router := &Router{
+		mux:                r,
+		authHandler:        authHandler,
+		userHandler:        userHandler,
+		feedHandler:        feedHandler,
+		feedFollowsHandler: feedFollowsHandler,
+	}
+
+	router.addV1Routes()
 
 	return r
 }
 
-func addV1Routes(r chi.Router, db database.Querier) {
-	r.Get("/readiness", handler.Readiness)
-	r.Get("/err", handler.Error)
+func (r Router) addV1Routes() {
+	v1 := chi.NewRouter()
+	r.mux.Mount("/v1", v1)
 
-	middleware := middleware.NewAuthMiddleware(db)
+	v1.Get("/readiness", handler.Readiness)
+	v1.Get("/err", handler.Error)
 
-	userHandler := handler.NewUserHandler(db)
-	r.Post("/users", userHandler.CreateUser)
-	r.Get("/users", middleware.Authenticate(userHandler.GetUser))
+	v1.Post("/users", r.userHandler.CreateUser)
+	v1.Get("/users", r.authHandler.Authenticate(r.userHandler.GetUser))
 
-	feedHandler := handler.NewFeedHandler(db)
-	r.Post("/feeds", middleware.Authenticate(feedHandler.CreateFeed))
-	r.Get("/feeds", feedHandler.ListFeeds)
+	v1.Post("/feeds", r.authHandler.Authenticate(r.feedHandler.CreateFeed))
+	v1.Get("/feeds", r.feedHandler.ListFeeds)
 
-	followsHandler := handler.NewFeedFollowsHandler(db)
-	r.Post("/feed_follows", middleware.Authenticate(followsHandler.CreateFeedFollows))
+	v1.Post("/feed_follows", r.authHandler.Authenticate(r.feedFollowsHandler.CreateFeedFollows))
+	v1.Get("/feed_follows", r.authHandler.Authenticate(r.feedFollowsHandler.ListFeedFollows))
 }

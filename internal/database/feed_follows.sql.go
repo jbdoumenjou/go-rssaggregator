@@ -45,13 +45,22 @@ func (q *Queries) DeleteFeedFollows(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-const getFeedFollows = `-- name: GetFeedFollows :many
+const listFeedFollows = `-- name: ListFeedFollows :many
 SELECT id, feed_id, user_id, created_at, updated_at FROM feed_follows
 WHERE user_id = $1
+ORDER BY updated_at DESC
+LIMIT $2
+OFFSET $3
 `
 
-func (q *Queries) GetFeedFollows(ctx context.Context, userID uuid.NullUUID) ([]FeedFollow, error) {
-	rows, err := q.db.QueryContext(ctx, getFeedFollows, userID)
+type ListFeedFollowsParams struct {
+	UserID uuid.NullUUID `json:"user_id"`
+	Limit  int32         `json:"limit"`
+	Offset int32         `json:"offset"`
+}
+
+func (q *Queries) ListFeedFollows(ctx context.Context, arg ListFeedFollowsParams) ([]FeedFollow, error) {
+	rows, err := q.db.QueryContext(ctx, listFeedFollows, arg.UserID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

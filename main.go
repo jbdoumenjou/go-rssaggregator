@@ -5,6 +5,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
+
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/handler"
+
 	"github.com/jbdoumenjou/go-rssaggregator/internal/api"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 	"github.com/joho/godotenv"
@@ -36,10 +40,16 @@ func main() {
 	if err != nil {
 		log.Fatal("cannot connect to the db:", err)
 	}
-	dbQueries := database.New(db)
+	userRepository := database.NewUserRepository(db)
+	feedRepository := database.NewFeedRepository(db)
+
+	authHandler := middleware.NewAuthMiddleware(userRepository)
+	userHandler := handler.NewUserHandler(userRepository)
+	feedHandler := handler.NewFeedHandler(feedRepository)
+	feedFollowsHandler := handler.NewFeedFollowsHandler(feedRepository)
 
 	// Create a new router.
-	r := api.NewRouter(dbQueries)
+	r := api.NewRouter(authHandler, userHandler, feedHandler, feedFollowsHandler)
 
 	// start the server.
 	if err := api.NewServer("localhost:"+port, r).Start(); err != nil {
