@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -12,14 +13,20 @@ import (
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 )
 
+// UserStore represents a store for managing user data.
+type UserStore interface {
+	CreateUser(ctx context.Context, name string) (database.User, error)
+	GetUserFromId(ctx context.Context, id uuid.UUID) (database.User, error)
+}
+
 // UserHandler is the handler for user related requests.
 type UserHandler struct {
-	db database.Querier
+	store UserStore
 }
 
 // NewUserHandler returns a new user handler.
-func NewUserHandler(db database.Querier) *UserHandler {
-	return &UserHandler{db: db}
+func NewUserHandler(store UserStore) *UserHandler {
+	return &UserHandler{store: store}
 }
 
 // createUserReq is the request to create a user.
@@ -36,7 +43,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.db.CreateUser(r.Context(), req.Name)
+	user, err := h.store.CreateUser(r.Context(), req.Name)
 	if err != nil {
 		// Error should be filtered here.
 		slog.Log(r.Context(), slog.LevelError, "create user: %v", err)
@@ -55,7 +62,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.db.GetUserFromId(r.Context(), userID)
+	user, err := h.store.GetUserFromId(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			respond.WithJSONError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
@@ -68,4 +75,16 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respond.WithJSON(w, http.StatusOK, user)
+}
+
+// GetUserIDFromContext gets the user id from the context.
+func GetUserIDFromContext(w http.ResponseWriter, r *http.Request) (uuid.UUID, error) {
+	userIDVal := r.Context().Value("user")
+	userID, ok := userIDVal.(uuid.UUID)
+
+	if userIDVal == nil || !ok {
+		return uuid.UUID{}, errors.New("cannot get user id from context")
+	}
+
+	return userID, nil
 }

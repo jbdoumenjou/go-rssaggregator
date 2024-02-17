@@ -18,6 +18,7 @@ import (
 type FeedStore interface {
 	CreateFeed(ctx context.Context, arg database.CreateFeedParams) (database.Feed, error)
 	ListFeeds(ctx context.Context, arg database.ListFeedsParams) ([]database.Feed, error)
+	CreateFeedAndFollow(ctx context.Context, arg database.CreateFeedParams) (database.Feed, database.FeedFollow, error)
 }
 
 // FeedHandler is the handler for feed related requests.
@@ -36,6 +37,12 @@ type createFeedReq struct {
 	URL  string `json:"url"`
 }
 
+// createFeedResponse is the response to create a feed.
+type createFeedResponse struct {
+	Feed       database.Feed       `json:"feed"`
+	FeedFollow database.FeedFollow `json:"feed_follow"`
+}
+
 // CreateFeed creates a new feed.
 func (h *FeedHandler) CreateFeed(w http.ResponseWriter, r *http.Request) {
 	var req createFeedReq
@@ -52,7 +59,7 @@ func (h *FeedHandler) CreateFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	feed, err := h.store.CreateFeed(r.Context(), database.CreateFeedParams{
+	feed, follow, err := h.store.CreateFeedAndFollow(r.Context(), database.CreateFeedParams{
 		Name:   req.Name,
 		Url:    req.URL,
 		UserID: uuid.NullUUID{UUID: userID, Valid: true},
@@ -62,11 +69,16 @@ func (h *FeedHandler) CreateFeed(w http.ResponseWriter, r *http.Request) {
 		// Error should be filtered here.
 		slog.Log(r.Context(), slog.LevelError, "create feed: %v", err)
 		respond.WithJSONError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	respond.WithJSON(w, http.StatusOK, feed)
+	respond.WithJSON(w, http.StatusOK, createFeedResponse{
+		Feed:       feed,
+		FeedFollow: follow,
+	})
 }
 
+// ListFeeds returns a list of feeds.
 func (h *FeedHandler) ListFeeds(w http.ResponseWriter, r *http.Request) {
 	// Get the values of 'offset' and 'limit' from the URL query parameters
 	offsetStr := r.URL.Query().Get("offset")
@@ -100,6 +112,7 @@ func (h *FeedHandler) ListFeeds(w http.ResponseWriter, r *http.Request) {
 		// Error should be filtered here.
 		slog.Log(r.Context(), slog.LevelError, "list feeds: %v", err)
 		respond.WithJSONError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	respond.WithJSON(w, http.StatusOK, feeds)

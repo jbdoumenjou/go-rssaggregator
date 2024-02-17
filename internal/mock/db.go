@@ -55,6 +55,21 @@ func (mr *MockQuerierMockRecorder) CreateFeed(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFeed", reflect.TypeOf((*MockQuerier)(nil).CreateFeed), arg0, arg1)
 }
 
+// CreateFeedFollows mocks base method.
+func (m *MockQuerier) CreateFeedFollows(arg0 context.Context, arg1 database.CreateFeedFollowsParams) (database.FeedFollow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateFeedFollows", arg0, arg1)
+	ret0, _ := ret[0].(database.FeedFollow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateFeedFollows indicates an expected call of CreateFeedFollows.
+func (mr *MockQuerierMockRecorder) CreateFeedFollows(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFeedFollows", reflect.TypeOf((*MockQuerier)(nil).CreateFeedFollows), arg0, arg1)
+}
+
 // CreateUser mocks base method.
 func (m *MockQuerier) CreateUser(arg0 context.Context, arg1 string) (database.User, error) {
 	m.ctrl.T.Helper()
@@ -68,6 +83,20 @@ func (m *MockQuerier) CreateUser(arg0 context.Context, arg1 string) (database.Us
 func (mr *MockQuerierMockRecorder) CreateUser(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockQuerier)(nil).CreateUser), arg0, arg1)
+}
+
+// DeleteFeedFollows mocks base method.
+func (m *MockQuerier) DeleteFeedFollows(arg0 context.Context, arg1 uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteFeedFollows", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteFeedFollows indicates an expected call of DeleteFeedFollows.
+func (mr *MockQuerierMockRecorder) DeleteFeedFollows(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFeedFollows", reflect.TypeOf((*MockQuerier)(nil).DeleteFeedFollows), arg0, arg1)
 }
 
 // GetUserFromApiKey mocks base method.
@@ -98,6 +127,21 @@ func (m *MockQuerier) GetUserFromId(arg0 context.Context, arg1 uuid.UUID) (datab
 func (mr *MockQuerierMockRecorder) GetUserFromId(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserFromId", reflect.TypeOf((*MockQuerier)(nil).GetUserFromId), arg0, arg1)
+}
+
+// ListFeedFollows mocks base method.
+func (m *MockQuerier) ListFeedFollows(arg0 context.Context, arg1 database.ListFeedFollowsParams) ([]database.FeedFollow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFeedFollows", arg0, arg1)
+	ret0, _ := ret[0].([]database.FeedFollow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFeedFollows indicates an expected call of ListFeedFollows.
+func (mr *MockQuerierMockRecorder) ListFeedFollows(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFeedFollows", reflect.TypeOf((*MockQuerier)(nil).ListFeedFollows), arg0, arg1)
 }
 
 // ListFeeds mocks base method.
