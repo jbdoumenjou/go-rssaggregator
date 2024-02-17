@@ -10,10 +10,12 @@ import (
 	"syscall"
 )
 
+// Server represents an HTTP server.
 type Server struct {
 	*http.Server
 }
 
+// NewServer creates a new server.
 func NewServer(addr string, handler http.Handler) *Server {
 	return &Server{
 		Server: &http.Server{
@@ -24,6 +26,7 @@ func NewServer(addr string, handler http.Handler) *Server {
 
 }
 
+// Start runs the HTTP server.
 func (s *Server) Start() error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

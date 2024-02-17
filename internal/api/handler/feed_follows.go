@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-
 	"github.com/google/uuid"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/api/respond"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"

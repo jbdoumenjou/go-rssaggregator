@@ -5,11 +5,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
-
-	"github.com/jbdoumenjou/go-rssaggregator/internal/api/handler"
-
 	"github.com/jbdoumenjou/go-rssaggregator/internal/api"
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/handler"
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"

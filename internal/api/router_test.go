@@ -11,19 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
-
-	"github.com/jbdoumenjou/go-rssaggregator/internal/api/handler"
-
-	"github.com/jbdoumenjou/go-rssaggregator/internal/generator"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
-
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/handler"
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
+	"github.com/jbdoumenjou/go-rssaggregator/internal/generator"
 	mockdb "github.com/jbdoumenjou/go-rssaggregator/internal/mock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 

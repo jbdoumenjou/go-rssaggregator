@@ -9,6 +9,7 @@ import (
 	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
 )
 
+// Router is the main router for the API.
 type Router struct {
 	mux *chi.Mux
 
@@ -18,6 +19,7 @@ type Router struct {
 	feedFollowsHandler *handler.FeedFollowsHandler
 }
 
+// NewRouter creates a new router.
 func NewRouter(authHandler *middleware.AuthHandler, userHandler *handler.UserHandler, feedHandler *handler.FeedHandler, feedFollowsHandler *handler.FeedFollowsHandler) http.Handler {
 	r := chi.NewRouter()
 
