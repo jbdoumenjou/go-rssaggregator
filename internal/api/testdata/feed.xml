@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Boot.dev Blog</title>
+    <pouet>toto</pouet>
+    <link>https://blog.boot.dev/</link>
+    <description>Recent content on Boot.dev Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 28 Feb 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.boot.dev/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>The Boot.dev Beat. March 2024</title>
+      <link>https://blog.boot.dev/news/bootdev-beat-2024-03/</link>
+      <pubDate>Wed, 28 Feb 2024 00:00:00 +0000</pubDate>
+      
+      <guid>https://blog.boot.dev/news/bootdev-beat-2024-03/</guid>
+      <description>Pythogoras escaped this month. The community rallied against the Serpent God, and while he was wounded and beaten back, he escaped.</description>
+    </item>
+    
+    <item>
+      <title>The Boot.dev Beat. February 2024</title>
+      <link>https://blog.boot.dev/news/bootdev-beat-2024-02/</link>
+      <pubDate>Wed, 31 Jan 2024 00:00:00 +0000</pubDate>
+      
+      <guid>https://blog.boot.dev/news/bootdev-beat-2024-02/</guid>
+      <description>609,179. That&amp;rsquo;s the number of lessons you crazy folks have completed on Boot.dev in the last 30 days.</description>
+    </item>
+    
+  </channel>
+</rss>
