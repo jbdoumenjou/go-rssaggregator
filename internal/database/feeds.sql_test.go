@@ -171,9 +171,18 @@ func TestQueries_ListFeeds(t *testing.T) {
 }
 
 func TestQueries_GetNextFeedsToFetch(t *testing.T) {
-	user := CreateRandomUser(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	// Use a separate container to avoid conflicts with the CreateFeed tests
+	// TODO: find a more elegant way to do this
+	container, err := NewPGContainer()
+	require.NoError(t, err)
+	defer container.Terminate(context.Background())
+
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	db := container.DB()
+
+	queries := New(db)
+	user, err := queries.CreateUser(ctx, generator.RandomString(6))
 
 	var feeds []Feed
 	// adds new feeds with last_fetched_at
@@ -185,7 +194,7 @@ func TestQueries_GetNextFeedsToFetch(t *testing.T) {
 		RETURNING id, name, url, user_id, created_at, updated_at, last_fetched_at;
 		`
 		now := time.Now()
-		err := testDB.QueryRowContext(ctx, query,
+		err := db.QueryRowContext(ctx, query,
 			generator.RandomString(12),
 			generator.RandomURL(10),
 			user.ID,
@@ -206,11 +215,17 @@ func TestQueries_GetNextFeedsToFetch(t *testing.T) {
 	}
 
 	// Adds a new feed without last_fetched_at
-	feed := CreateRandomFeed(t)
+	feed, err := queries.CreateFeed(ctx, CreateFeedParams{
+		Name:   generator.RandomString(12),
+		Url:    generator.RandomURL(10),
+		UserID: uuid.NullUUID{UUID: user.ID, Valid: true},
+	})
+	require.NoError(t, err)
+
 	// add before to keep the right order
 	feeds = append([]Feed{feed}, feeds...)
 
-	feedsToFetch, err := testQueries.GetNextFeedsToFetch(context.Background(), 4)
+	feedsToFetch, err := queries.GetNextFeedsToFetch(context.Background(), 4)
 	require.NoError(t, err)
 
 	assert.Len(t, feedsToFetch, 4)

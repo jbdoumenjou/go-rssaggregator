@@ -98,3 +98,23 @@ func (f FeedRepository) DeleteFeedFollows(ctx context.Context, arg DeleteFeedFol
 
 	return nil
 }
+
+// GetNextFeedsToFetch returns the next feeds to fetch.
+func (f FeedRepository) GetNextFeedsToFetch(ctx context.Context, limit int32) ([]Feed, error) {
+	feeds, err := f.queries.GetNextFeedsToFetch(ctx, limit)
+	if err != nil {
+		return nil, fmt.Errorf("error getting next feeds to fetch: %w", err)
+	}
+
+	return feeds, nil
+}
+
+// MarkFeedFetched marks a feed as fetched.
+func (f FeedRepository) MarkFeedFetched(ctx context.Context, id uuid.UUID) error {
+	err := f.queries.MarkFeedFetched(ctx, id)
+	if err != nil {
+		return fmt.Errorf("error getting next feeds to fetch: %w", err)
+	}
+
+	return nil
+}
