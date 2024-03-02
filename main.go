@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"os"
+	"time"
 
 	"github.com/jbdoumenjou/go-rssaggregator/internal/api"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/api/handler"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/api/middleware"
+	"github.com/jbdoumenjou/go-rssaggregator/internal/api/scrapper"
 	"github.com/jbdoumenjou/go-rssaggregator/internal/database"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -45,6 +48,11 @@ func main() {
 	userHandler := handler.NewUserHandler(userRepository)
 	feedHandler := handler.NewFeedHandler(feedRepository)
 	feedFollowsHandler := handler.NewFeedFollowsHandler(feedRepository)
+
+	fetcher := scrapper.NewFeedFetcher(feedRepository, time.Hour*24, 50)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	go fetcher.Start(ctx)
 
 	// Create a new router.
 	r := api.NewRouter(authHandler, userHandler, feedHandler, feedFollowsHandler)
