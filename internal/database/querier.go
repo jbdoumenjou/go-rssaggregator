@@ -15,10 +15,12 @@ type Querier interface {
 	CreateFeedFollows(ctx context.Context, arg CreateFeedFollowsParams) (FeedFollow, error)
 	CreateUser(ctx context.Context, name string) (User, error)
 	DeleteFeedFollows(ctx context.Context, arg DeleteFeedFollowsParams) error
+	GetNextFeedsToFetch(ctx context.Context, limit int32) ([]Feed, error)
 	GetUserFromApiKey(ctx context.Context, apiKey string) (User, error)
 	GetUserFromId(ctx context.Context, id uuid.UUID) (User, error)
 	ListFeedFollows(ctx context.Context, arg ListFeedFollowsParams) ([]FeedFollow, error)
 	ListFeeds(ctx context.Context, arg ListFeedsParams) ([]Feed, error)
+	MarkFeedFetched(ctx context.Context, id uuid.UUID) error
 }
 
 var _ Querier = (*Queries)(nil)

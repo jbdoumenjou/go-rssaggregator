@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/jbdoumenjou/go-rssaggregator/internal/generator"
 
@@ -167,4 +168,79 @@ func TestQueries_ListFeeds(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestQueries_GetNextFeedsToFetch(t *testing.T) {
+	user := CreateRandomUser(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	var feeds []Feed
+	// adds new feeds with last_fetched_at
+	for i := 0; i < 3; i++ {
+		var feed Feed
+		query := `
+		INSERT INTO feeds (name, url, user_id, created_at, updated_at, last_fetched_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, name, url, user_id, created_at, updated_at, last_fetched_at;
+		`
+		now := time.Now()
+		err := testDB.QueryRowContext(ctx, query,
+			generator.RandomString(12),
+			generator.RandomURL(10),
+			user.ID,
+			now,
+			now,
+			now.Add(time.Duration(i)*time.Second),
+		).Scan(
+			&feed.ID,
+			&feed.Name,
+			&feed.Url,
+			&feed.UserID,
+			&feed.CreatedAt,
+			&feed.UpdatedAt,
+			&feed.LastFetchedAt)
+		require.NoError(t, err)
+
+		feeds = append(feeds, feed)
+	}
+
+	// Adds a new feed without last_fetched_at
+	feed := CreateRandomFeed(t)
+	// add before to keep the right order
+	feeds = append([]Feed{feed}, feeds...)
+
+	feedsToFetch, err := testQueries.GetNextFeedsToFetch(context.Background(), 4)
+	require.NoError(t, err)
+
+	assert.Len(t, feedsToFetch, 4)
+	for i := 0; i < len(feedsToFetch); i++ {
+		assert.Equal(t, feeds[i].ID, feedsToFetch[i].ID)
+		// the last_fetch_at field is not updated at this time, should be done in a service.
+		assert.Equal(t, feeds[i].LastFetchedAt, feedsToFetch[i].LastFetchedAt)
+	}
+}
+
+func TestQueries_MarkFeedFetched(t *testing.T) {
+	feed := CreateRandomFeed(t)
+	require.Empty(t, feed.LastFetchedAt)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	start := time.Now()
+	err := testQueries.MarkFeedFetched(ctx, feed.ID)
+	require.NoError(t, err)
+
+	query := `
+	SELECT last_fetched_at
+	FROM feeds
+	WHERE id = $1;
+	`
+
+	var lastFetchedAt *time.Time
+	err = testDB.QueryRowContext(ctx, query, feed.ID).Scan(&lastFetchedAt)
+	require.NoError(t, err)
+	require.NotEmpty(t, lastFetchedAt)
+	require.True(t, lastFetchedAt.After(start))
 }
