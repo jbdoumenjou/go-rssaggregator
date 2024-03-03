@@ -38,6 +38,7 @@ func TestMain(m *testing.M) {
 	}()
 
 	testDB = pgContainer.DB()
+	testQueries = database.New(testDB)
 
 	_, err = testDB.Exec("DELETE from users")
 	if err != nil {

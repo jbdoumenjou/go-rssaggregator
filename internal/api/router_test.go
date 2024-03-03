@@ -25,7 +25,7 @@ import (
 func TestReadiness(t *testing.T) {
 	userRepository := database.NewUserRepository(testDB)
 	userHandler := handler.NewUserHandler(userRepository)
-	r := NewRouter(nil, userHandler, nil, nil)
+	r := NewRouter(nil, userHandler, nil, nil, nil)
 
 	req, err := http.NewRequest(http.MethodGet, "/v1/readiness", http.NoBody)
 	if err != nil {
@@ -45,7 +45,7 @@ func TestReadiness(t *testing.T) {
 func TestErr(t *testing.T) {
 	userRepository := database.NewUserRepository(testDB)
 	userHandler := handler.NewUserHandler(userRepository)
-	r := NewRouter(nil, userHandler, nil, nil)
+	r := NewRouter(nil, userHandler, nil, nil, nil)
 
 	req, err := http.NewRequest(http.MethodGet, "/v1/err", http.NoBody)
 	if err != nil {
@@ -110,7 +110,7 @@ func createUser(t *testing.T, r http.Handler) user {
 func TestUserHandler_db_CreateUser(t *testing.T) {
 	userRepository := database.NewUserRepository(testDB)
 	userHandler := handler.NewUserHandler(userRepository)
-	router := NewRouter(nil, userHandler, nil, nil)
+	router := NewRouter(nil, userHandler, nil, nil, nil)
 
 	u := createUser(t, router)
 	require.NotEmpty(t, u)
@@ -133,7 +133,7 @@ func TestUserHandler_mock_CreateUser(t *testing.T) {
 	}, nil)
 
 	userHandler := handler.NewUserHandler(querier)
-	router := NewRouter(nil, userHandler, nil, nil)
+	router := NewRouter(nil, userHandler, nil, nil, nil)
 
 	createUser(t, router)
 }
@@ -143,7 +143,7 @@ func TestUserHandler_GetUser(t *testing.T) {
 	userHandler := handler.NewUserHandler(userRepository)
 	authMiddleware := middleware.NewAuthMiddleware(userRepository)
 
-	r := NewRouter(authMiddleware, userHandler, nil, nil)
+	r := NewRouter(authMiddleware, userHandler, nil, nil, nil)
 
 	user1 := createUser(t, r)
 
@@ -312,7 +312,7 @@ func TestFeedHandler_CreateFeed(t *testing.T) {
 	feedRepository := database.NewFeedRepository(testDB)
 	feedHandler := handler.NewFeedHandler(feedRepository)
 
-	router := NewRouter(authMiddleware, userHandler, feedHandler, nil)
+	router := NewRouter(authMiddleware, userHandler, feedHandler, nil, nil)
 
 	user := createUser(t, router)
 	feed, feedFollow := createFeed(t, router, user)
@@ -328,7 +328,7 @@ func TestFeedHandler_ListFeeds(t *testing.T) {
 	feedRepository := database.NewFeedRepository(testDB)
 	feedHandler := handler.NewFeedHandler(feedRepository)
 
-	router := NewRouter(authMiddleware, userHandler, feedHandler, nil)
+	router := NewRouter(authMiddleware, userHandler, feedHandler, nil, nil)
 
 	user := createUser(t, router)
 	var feeds []feed
@@ -372,7 +372,7 @@ func TestFeedHandler_CreateFeedFollows(t *testing.T) {
 	feedHandler := handler.NewFeedHandler(feedRepository)
 	feedFollowsHandler := handler.NewFeedFollowsHandler(feedRepository)
 
-	router := NewRouter(authMiddleware, userHandler, feedHandler, feedFollowsHandler)
+	router := NewRouter(authMiddleware, userHandler, feedHandler, feedFollowsHandler, nil)
 
 	user := createUser(t, router)
 	feed, _ := createFeed(t, router, user)
@@ -413,7 +413,7 @@ func TestFeedHandler_DeleteFeedFollows(t *testing.T) {
 	feedHandler := handler.NewFeedHandler(feedRepository)
 	feedFollowsHandler := handler.NewFeedFollowsHandler(feedRepository)
 
-	router := NewRouter(authMiddleware, userHandler, feedHandler, feedFollowsHandler)
+	router := NewRouter(authMiddleware, userHandler, feedHandler, feedFollowsHandler, nil)
 
 	user := createUser(t, router)
 	_, follow := createFeed(t, router, user)
@@ -451,4 +451,133 @@ func TestFeedHandler_DeleteFeedFollows(t *testing.T) {
 		Offset: 0,
 	})
 	assert.Empty(t, listFollowsResponse)
+}
+
+func TestPostHandler_GetPostsByUser(t *testing.T) {
+	userRepository := database.NewUserRepository(testDB)
+	userHandler := handler.NewUserHandler(userRepository)
+	authMiddleware := middleware.NewAuthMiddleware(userRepository)
+
+	postRepository := database.NewPostRepository(testDB)
+	postHandler := handler.NewPostHandler(postRepository)
+
+	r := NewRouter(authMiddleware, userHandler, nil, nil, postHandler)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	user, err := testQueries.CreateUser(ctx, generator.RandomString(10))
+	require.NoError(t, err)
+	require.NotEmpty(t, user)
+
+	feed, err := testQueries.CreateFeed(ctx, database.CreateFeedParams{
+		Name:   generator.RandomString(10),
+		Url:    generator.RandomURL(6),
+		UserID: uuid.NullUUID{UUID: user.ID, Valid: true},
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, feed)
+
+	var posts []database.Post
+	for i := 0; i < 11; i++ {
+		post, err := testQueries.CreatePost(ctx, database.CreatePostParams{
+			Title:       generator.RandomString(10),
+			Url:         generator.RandomURL(6),
+			Description: generator.RandomString(10),
+			PublishedAt: time.Now(),
+			FeedID:      uuid.NullUUID{UUID: feed.ID, Valid: true},
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, post)
+		posts = append(posts, post)
+	}
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].PublishedAt.After(posts[j].PublishedAt)
+	})
+
+	tests := []struct {
+		name               string
+		limit              string
+		setHeader          func(h http.Header)
+		expectedStatusCode int
+		expectedBody       string
+	}{
+		{
+			name: "valid",
+			setHeader: func(h http.Header) {
+				h.Set("Authorization", "ApiKey "+user.ApiKey)
+			},
+			expectedStatusCode: http.StatusOK,
+			expectedBody: func() string {
+				b, err := json.Marshal(posts[:10])
+				require.NoError(t, err)
+				return string(b)
+			}(),
+		},
+		{
+			name: "valid with limit",
+			setHeader: func(h http.Header) {
+				h.Set("Authorization", "ApiKey "+user.ApiKey)
+			},
+			limit:              "5",
+			expectedStatusCode: http.StatusOK,
+			expectedBody: func() string {
+				b, err := json.Marshal(posts[:5])
+				require.NoError(t, err)
+				return string(b)
+			}(),
+		},
+		{
+			name:               "without authorization header",
+			setHeader:          func(h http.Header) {},
+			expectedStatusCode: http.StatusForbidden,
+			expectedBody:       `{"error":"Forbidden"}`,
+		},
+		{
+			name: "with empty authorization value",
+			setHeader: func(h http.Header) {
+				h.Set("Authorization", "")
+			},
+			expectedStatusCode: http.StatusForbidden,
+			expectedBody:       `{"error":"Forbidden"}`,
+		},
+		{
+			name: "with bad authorization key",
+			setHeader: func(h http.Header) {
+				h.Set("Authorization", "token "+user.ApiKey)
+			},
+			expectedStatusCode: http.StatusForbidden,
+			expectedBody:       `{"error":"Forbidden"}`,
+		},
+		{
+			name: "with bad authorization value",
+			setHeader: func(h http.Header) {
+				h.Set("Authorization", "ApiKey unknown")
+			},
+			expectedStatusCode: http.StatusForbidden,
+			expectedBody:       `{"error":"Forbidden"}`,
+		},
+	}
+
+	for _, test := range tests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			url := "/v1/posts"
+			if test.limit != "" {
+				url += "?limit=" + test.limit
+			}
+			req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			tc.setHeader(req.Header)
+			rr := httptest.NewRecorder()
+
+			r.ServeHTTP(rr, req)
+			assert.Equal(t, tc.expectedStatusCode, rr.Code)
+			assert.JSONEq(t, tc.expectedBody, rr.Body.String())
+		})
+	}
+
 }

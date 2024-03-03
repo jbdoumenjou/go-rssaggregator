@@ -22,6 +22,8 @@ func Test_parseFeed(t *testing.T) {
 	require.Len(t, rssFeed.Channel.Items, 2)
 	item := rssFeed.Channel.Items[1]
 	assert.Equal(t, "The Boot.dev Beat. February 2024", item.Title)
+
 	assert.Equal(t, "Wed, 31 Jan 2024 00:00:00 +0000", item.PubDate)
+	assert.Equal(t, "https://blog.boot.dev/news/bootdev-beat-2024-02/", item.Link)
 	assert.Equal(t, `609,179. That&rsquo;s the number of lessons you crazy folks have completed on Boot.dev in the last 30 days.`, item.Description)
 }

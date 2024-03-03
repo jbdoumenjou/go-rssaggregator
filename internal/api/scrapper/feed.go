@@ -32,30 +32,37 @@ type RSSFeedChannel struct {
 // RSSFeedItem represents the structure of an RSS feed item.
 type RSSFeedItem struct {
 	Title       string `xml:"title"`
+	Link        string `xml:"link"`
 	Description string `xml:"description"`
 	PubDate     string `xml:"pubDate"`
 }
 
-// FeedStore represents a store for managing feed data.
+// FeedStore represents a feedRepository for managing feed data.
 type FeedStore interface {
 	GetNextFeedsToFetch(ctx context.Context, limit int32) ([]database.Feed, error)
 	MarkFeedFetched(ctx context.Context, id uuid.UUID) error
 }
 
+type PostRepository interface {
+	CreatePost(ctx context.Context, arg database.CreatePostParams) (database.Post, error)
+}
+
 // FeedFetcher represents a feed fetcher.
 type FeedFetcher struct {
-	store    FeedStore
-	interval time.Duration
-	limit    int32
+	feedRepository FeedStore
+	postRepository PostRepository
+	interval       time.Duration
+	limit          int32
 }
 
 // NewFeedFetcher returns a new feed fetcher.
-// It fetches feeds from the store at the given interval and limits the number of feeds to fetch.
-func NewFeedFetcher(store FeedStore, interval time.Duration, limit int32) *FeedFetcher {
+// It fetches feeds from the feedRepository at the given interval and limits the number of feeds to fetch.
+func NewFeedFetcher(feedRepository FeedStore, postRepository PostRepository, limit int32, interval time.Duration) *FeedFetcher {
 	return &FeedFetcher{
-		store:    store,
-		interval: interval,
-		limit:    limit,
+		feedRepository: feedRepository,
+		postRepository: postRepository,
+		interval:       interval,
+		limit:          limit,
 	}
 }
 
@@ -84,7 +91,7 @@ func (f *FeedFetcher) Start(ctx context.Context) {
 
 // processFeeds fetches the next feeds to fetch and marks them as fetched.
 func (f *FeedFetcher) processFeeds(ctx context.Context, limit int32) error {
-	feeds, err := f.store.GetNextFeedsToFetch(ctx, limit)
+	feeds, err := f.feedRepository.GetNextFeedsToFetch(ctx, limit)
 	if err != nil {
 		return fmt.Errorf("error getting next feeds to fetch: %w", err)
 	}
@@ -103,9 +110,37 @@ func (f *FeedFetcher) processFeeds(ctx context.Context, limit int32) error {
 				log.Printf("error fetching rss feed: %v", err)
 				return
 			}
-			fmt.Println("Process rss feed: " + rssFeed.Channel.Title)
+			log.Printf("Process rss feed: " + rssFeed.Channel.Title)
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			rssLayout := "Mon, 02 Jan 2006 15:04:05 -0700"
 
-			if err := f.store.MarkFeedFetched(ctx, feed.ID); err != nil {
+			for _, item := range rssFeed.Channel.Items {
+
+				pubDate, err := time.Parse(rssLayout, item.PubDate)
+				if err != nil {
+					log.Printf("error parsing timestamp: %v", err)
+					continue
+				}
+
+				post, err := f.postRepository.CreatePost(ctx, database.CreatePostParams{
+					Title:       item.Title,
+					Url:         item.Link,
+					Description: item.Description,
+					PublishedAt: pubDate,
+					FeedID: uuid.NullUUID{
+						UUID:  feed.ID,
+						Valid: true,
+					},
+				})
+				if err != nil {
+					log.Printf("error creating post: %v", err)
+					return
+				}
+				fmt.Println("Create post: " + post.Title)
+			}
+
+			if err := f.feedRepository.MarkFeedFetched(ctx, feed.ID); err != nil {
 				log.Printf("error marking feed fetched: %v", err)
 				return
 			}

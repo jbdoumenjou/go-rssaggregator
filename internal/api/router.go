@@ -17,10 +17,11 @@ type Router struct {
 	userHandler        *handler.UserHandler
 	feedHandler        *handler.FeedHandler
 	feedFollowsHandler *handler.FeedFollowsHandler
+	postHandler        *handler.PostHandler
 }
 
 // NewRouter creates a new router.
-func NewRouter(authHandler *middleware.AuthHandler, userHandler *handler.UserHandler, feedHandler *handler.FeedHandler, feedFollowsHandler *handler.FeedFollowsHandler) http.Handler {
+func NewRouter(authHandler *middleware.AuthHandler, userHandler *handler.UserHandler, feedHandler *handler.FeedHandler, feedFollowsHandler *handler.FeedFollowsHandler, postHandler *handler.PostHandler) http.Handler {
 	r := chi.NewRouter()
 
 	// Basic CORS
@@ -42,6 +43,7 @@ func NewRouter(authHandler *middleware.AuthHandler, userHandler *handler.UserHan
 		userHandler:        userHandler,
 		feedHandler:        feedHandler,
 		feedFollowsHandler: feedFollowsHandler,
+		postHandler:        postHandler,
 	}
 
 	router.addV1Routes()
@@ -65,4 +67,6 @@ func (r Router) addV1Routes() {
 	v1.Post("/feed_follows", r.authHandler.Authenticate(r.feedFollowsHandler.CreateFeedFollows))
 	v1.Get("/feed_follows", r.authHandler.Authenticate(r.feedFollowsHandler.ListFeedFollows))
 	v1.Delete("/feed_follows/{id}", r.authHandler.Authenticate(r.feedFollowsHandler.DeleteFeedFollows))
+
+	v1.Get("/posts", r.authHandler.Authenticate(r.postHandler.GetPostsByUser))
 }
