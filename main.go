@@ -43,13 +43,14 @@ func main() {
 	}
 	userRepository := database.NewUserRepository(db)
 	feedRepository := database.NewFeedRepository(db)
+	postRepository := database.NewPostRepository(db)
 
 	authHandler := middleware.NewAuthMiddleware(userRepository)
 	userHandler := handler.NewUserHandler(userRepository)
 	feedHandler := handler.NewFeedHandler(feedRepository)
 	feedFollowsHandler := handler.NewFeedFollowsHandler(feedRepository)
 
-	fetcher := scrapper.NewFeedFetcher(feedRepository, time.Hour*24, 50)
+	fetcher := scrapper.NewFeedFetcher(feedRepository, postRepository, 50, time.Hour*24)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	go fetcher.Start(ctx)
