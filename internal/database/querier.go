@@ -13,9 +13,11 @@ import (
 type Querier interface {
 	CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error)
 	CreateFeedFollows(ctx context.Context, arg CreateFeedFollowsParams) (FeedFollow, error)
+	CreatePost(ctx context.Context, arg CreatePostParams) (Post, error)
 	CreateUser(ctx context.Context, name string) (User, error)
 	DeleteFeedFollows(ctx context.Context, arg DeleteFeedFollowsParams) error
 	GetNextFeedsToFetch(ctx context.Context, limit int32) ([]Feed, error)
+	GetPostsByUser(ctx context.Context, arg GetPostsByUserParams) ([]Post, error)
 	GetUserFromApiKey(ctx context.Context, apiKey string) (User, error)
 	GetUserFromId(ctx context.Context, id uuid.UUID) (User, error)
 	ListFeedFollows(ctx context.Context, arg ListFeedFollowsParams) ([]FeedFollow, error)

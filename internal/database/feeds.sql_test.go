@@ -194,6 +194,7 @@ func TestQueries_GetNextFeedsToFetch(t *testing.T) {
 		RETURNING id, name, url, user_id, created_at, updated_at, last_fetched_at;
 		`
 		now := time.Now()
+
 		err := db.QueryRowContext(ctx, query,
 			generator.RandomString(12),
 			generator.RandomURL(10),
